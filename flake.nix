@@ -60,7 +60,7 @@
           
           inputs_nixpkgs_url = inputs.nixpkgs.meta.original.url or inputs.nixpkgs.url;
           inputs_devenv_url = "github:cachix/devenv/v1.0.8"; # Using the literal string from top-level inputs
-          inputs_flake_utils_url = inputs.flake-utils.meta.original.url or inputs.flake-utils.url;
+          inputs_flake_utils_url = "github:numtide/flake-utils"; # Using the literal string from top-level inputs
           inputs_uv2nix_url = "github:pyproject-nix/uv2nix"; # Using the literal string from top-level inputs
           inputs_uv2nix_rev = inputs.uv2nix.rev or (inputs.uv2nix.meta.original.rev or "main");
           
