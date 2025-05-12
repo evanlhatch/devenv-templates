@@ -131,19 +131,13 @@ cp -rT "$BASE_TEMPLATE_DIR/" "$TARGET_DIR/" # -T treats source as a directory
 mv "${TARGET_DIR}/.gitignore_template" "${TARGET_DIR}/.gitignore"
 mv "${TARGET_DIR}/justfile_template" "${TARGET_DIR}/Justfile"
 mv "${TARGET_DIR}/README.md_template" "${TARGET_DIR}/README.md"
-# project_config.nix_template is no longer directly moved if we use a pre-generated one.
-# If @generated_project_config_path@ is used, we'll cp that.
-# Otherwise, the old mv for project_config.nix_template should be removed.
-# For now, assume project_config.nix is handled by the cp from @generated_project_config_path@
 if [ -f "${TARGET_DIR}/project_config.nix_template" ]; then
   rm "${TARGET_DIR}/project_config.nix_template"
 fi 
 
-
 # 1. Copy pre-generated project_config.nix from flake
 log_info "Copying pre-generated project_config.nix template..."
 cp "@generated_project_config_path@" "${TARGET_DIR}/project_config.nix"
-# Placeholders like {{PROJECT_NAME}} will be replaced by the 'sd' commands later.
 log_info "Copied project_config.nix template."
 
 # 2. Create devenv.yaml with pinned inputs from the template flake
@@ -154,14 +148,6 @@ cat << EOF > "${TARGET_DIR}/devenv.yaml"
 inputs:
   nixpkgs:
     url: @inputs_nixpkgs_url@
-  # The devenv CLI itself is often provided by the project's flake.nix
-  # or a global install. Pinning devenv-sh here is an option if not using a project flake.
-  # devenv:
-  #   url: @inputs_devenv_url@
-  #   inputs:
-  #     nixpkgs:
-  #       follows: nixpkgs
-  # If the generated flake.nix doesn't include flake-utils, uv2nix, etc., add them here.
 EOF
 
 # 3. Create .envrc for direnv + Flakes
@@ -174,32 +160,33 @@ EOF
 
 # 4. Create the main project flake.nix (based on a simple template)
 log_info "Creating project flake.nix..."
+
+PYTHON_INPUTS=""
+if [ "$PROJECT_TYPE" == "python" ]; then
+  PYTHON_INPUTS=$(echo \
+"    uv2nix = {\\n      url = \"@inputs_uv2nix_url@\";\\n      rev = \"@inputs_uv2nix_rev@\";\\n      inputs.nixpkgs.follows = \"nixpkgs\";\\n    };")
+fi
+
+RUST_INPUTS=""
+if [ "$PROJECT_TYPE" == "rust" ]; then
+  RUST_INPUTS=$(echo \
+"    crane.url = \"@inputs_crane_url@\";\\n      crane.inputs.nixpkgs.follows = \"nixpkgs\";\\n    fenix.url = \"@inputs_fenix_url@\";\\n      fenix.inputs.nixpkgs.follows = \"nixpkgs\";")
+fi
+
 cat << EOF > "${TARGET_DIR}/flake.nix"
 {
   description = "A new ${PROJECT_TYPE} project: ${PROJECT_NAME}";
 
   inputs = {
     nixpkgs.url = "@inputs_nixpkgs_url@";
-    flake-utils.url = "@inputs_flake_utils_url@"; # devenv.lib.mkFlake uses this
+    flake-utils.url = "@inputs_flake_utils_url@";
     devenv-sh.url = "@inputs_devenv_url@";
     devenv-sh.inputs.nixpkgs.follows = "nixpkgs";
 
-    # Conditionally add language-specific inputs based on PROJECT_TYPE
-    # (These are used by the devenv modules)
-    $(if [ "\$PROJECT_TYPE" == "python" ]; then
-      echo \\
-    "uv2nix = {\n      url = \"@inputs_uv2nix_url@\";\n      rev = \"@inputs_uv2nix_rev@\";\n      inputs.nixpkgs.follows = \"nixpkgs\";\n    };";
-    fi)
-    $(if [ "\$PROJECT_TYPE" == "rust" ]; then
-      echo \\
-    "crane.url = \\"@inputs_crane_url@\\";
-    crane.inputs.nixpkgs.follows = \\"nixpkgs\\";
-    fenix.url = \\"@inputs_fenix_url@\\";
-    fenix.inputs.nixpkgs.follows = \\"nixpkgs\\";";
-    fi)
+${PYTHON_INPUTS}
+${RUST_INPUTS}
   };
 
-  # Add devenv binary cache for faster builds
   nixConfig = {
     extra-trusted-public-keys = "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=";
     extra-substituters = "https://devenv.cachix.org";
@@ -210,20 +197,13 @@ cat << EOF > "${TARGET_DIR}/flake.nix"
       let
         pkgs = import nixpkgs {
           inherit system;
-          # overlays = [ devenv-sh.overlays.default ]; # Not needed if using devenv-sh.lib.mkFlake
-          config.allowUnfree = true; # Example
+          config.allowUnfree = true;
         };
       in
       {
         devShells.default = devenv-sh.lib.mkFlake {
-          inherit pkgs inputs; # Pass inputs to devenv.nix
-          # The devenv.nix file (from template_base) will be used.
-          # It reads project_config.nix to load language-specific modules.
+          inherit pkgs inputs;
         };
-
-        # You can add other flake outputs like packages, apps, checks here
-        # packages.default = ...;
-        # apps.default = ...;
       }
     );
 }
@@ -232,7 +212,6 @@ EOF
 # --- Language-Specific File Copying & Setup ---
 if [ "\$PROJECT_TYPE" == "python" ]; then
   log_info "Copying Python-specific files..."
-  # Assuming python_module.nix is the devenv module, pyproject.toml, etc.
   cp -rT "\$PYTHON_TEMPLATE_DIR/" "\$TARGET_DIR/"
   mv "\${TARGET_DIR}/pyproject.toml_template" "\${TARGET_DIR}/pyproject.toml"
   if [ -f "\${TARGET_DIR}/justfile_python_overlay" ]; then
@@ -244,19 +223,17 @@ if [ "\$PROJECT_TYPE" == "python" ]; then
     cat "\${TARGET_DIR}/README_python.md" >> "\${TARGET_DIR}/README.md"
     rm "\${TARGET_DIR}/README_python.md"
   fi
-  if [ -d "\${TARGET_DIR}/.vscode_template" ]; then # if vscode settings are in a dir
+  if [ -d "\${TARGET_DIR}/.vscode_template" ]; then
     mv "\${TARGET_DIR}/.vscode_template" "\${TARGET_DIR}/.vscode"
-  elif [ -f "\${TARGET_DIR}/settings.json_template" ]; then # if it's just the file
+  elif [ -f "\${TARGET_DIR}/settings.json_template" ]; then
     mkdir -p "\${TARGET_DIR}/.vscode"
     mv "\${TARGET_DIR}/settings.json_template" "\${TARGET_DIR}/.vscode/settings.json"
   fi
 
-  # Create placeholder src directory and __init__.py
   PYTHON_PACKAGE_NAME=\$(echo "\$PROJECT_NAME" | sd '-' '_' | tr '[:upper:]' '[:lower:]')
   mkdir -p "\${TARGET_DIR}/src/\${PYTHON_PACKAGE_NAME}"
   touch "\${TARGET_DIR}/src/\${PYTHON_PACKAGE_NAME}/__init__.py"
   echo "print('Hello from \${PYTHON_PACKAGE_NAME}')" > "\${TARGET_DIR}/src/\${PYTHON_PACKAGE_NAME}/main.py"
-  # Create basic tests directory
   mkdir -p "\${TARGET_DIR}/tests"
   touch "\${TARGET_DIR}/tests/__init__.py"
   echo "def test_example(): assert True" > "\${TARGET_DIR}/tests/test_example.py"
@@ -280,7 +257,6 @@ elif [ "\$PROJECT_TYPE" == "rust" ]; then
     mkdir -p "\${TARGET_DIR}/.vscode"
     mv "\${TARGET_DIR}/settings.json_template" "\${TARGET_DIR}/.vscode/settings.json"
   fi
-  # Create basic src/main.rs
   mkdir -p "\${TARGET_DIR}/src"
   echo 'fn main() { println!("Hello, world from {}!", "'"\${PROJECT_NAME}"'"); }' > "\${TARGET_DIR}/src/main.rs"
 fi
@@ -288,9 +264,8 @@ fi
 # --- Placeholder Replacement (using sd) ---
 log_info "Replacing placeholders in copied files..."
 pushd "\$TARGET_DIR" > /dev/null
-  # Common placeholders
   find . -type f -not -path '*/.git/*' -not -name '*.lock' -print0 | while IFS= read -r -d \$'\\0' file; do
-    if file -b --mime-type "\$file" | grep -q text; then # Process only text files
+    if file -b --mime-type "\$file" | grep -q text; then
       sd '{{PROJECT_NAME}}' "\$PROJECT_NAME" "\$file" || true
       sd '{{PROJECT_TYPE}}' "\$PROJECT_TYPE" "\$file" || true
       PROJECT_NAME_SNAKE_CASE=\$(echo "\$PROJECT_NAME" | sd '-' '_' | tr '[:upper:]' '[:lower:]')
@@ -300,7 +275,7 @@ pushd "\$TARGET_DIR" > /dev/null
         PYTHON_VERSION_SHORT_NO_DOT=\$(echo "\$PYTHON_VERSION" | sd '[.]' '')
         sd '{{PYTHON_VERSION_SHORT_NO_DOT}}' "\$PYTHON_VERSION_SHORT_NO_DOT" "\$file" || true
         sd '{{MANAGE_DEPS_WITH_UV2NIX}}' "\$MANAGE_DEPS_WITH_UV2NIX" "\$file" || true
-        PYTHON_MAIN_MODULE_PATH="\${PROJECT_NAME_SNAKE_CASE}.main" # Example
+        PYTHON_MAIN_MODULE_PATH="\${PROJECT_NAME_SNAKE_CASE}.main"
         sd '{{PYTHON_MAIN_MODULE_PATH}}' "\$PYTHON_MAIN_MODULE_PATH" "\$file" || true
       elif [ "\$PROJECT_TYPE" == "rust" ]; then
         sd '{{RUST_EDITION}}' "\$RUST_EDITION" "\$file" || true
@@ -313,10 +288,7 @@ popd > /dev/null
 log_info "Initializing Git repository in \${TARGET_DIR}..."
 pushd "\$TARGET_DIR" > /dev/null
   git init -b main
-  # Add example scripts to be executable if they exist
-  if [ -d "example_scripts" ]; then
-    chmod +x example_scripts/* || true
-  fi
+  if [ -d "example_scripts" ]; then chmod +x example_scripts/* || true; fi
   git add .
   git commit -m "Initial commit: scaffolded \${PROJECT_TYPE} project '\${PROJECT_NAME}' via template"
 popd > /dev/null
