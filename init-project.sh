@@ -43,7 +43,7 @@ set -euo pipefail
 #   inputs_flake_utils_url = inputs.flake-utils.url;
 #   inputs_uv2nix_url = inputs.uv2nix.url;
 #   inputs_uv2nix_rev = inputs.uv2nix.rev;
-#   inputs_ty_source_url = inputs.ty-source.url;
+#   # inputs_ty_source_url = inputs.ty-source.url; # Removed
 #   inputs_crane_url = inputs.crane.url;
 #   inputs_fenix_url = inputs.fenix.url;
 # };
@@ -201,8 +201,7 @@ cat << EOF > "${TARGET_DIR}/flake.nix"
     # (These are used by the devenv modules)
     $(if [ "\$PROJECT_TYPE" == "python" ]; then
       echo \\
-    "uv2nix = {\n      url = \"@inputs_uv2nix_url@\";\n      rev = \"@inputs_uv2nix_rev@\";\n      inputs.nixpkgs.follows = \"nixpkgs\";\n    };\n    ty-source.url = \\"@inputs_ty_source_url@\\"; # If building 'ty' from source
-    ty-source.flake = false;";
+    "uv2nix = {\n      url = \"@inputs_uv2nix_url@\";\n      rev = \"@inputs_uv2nix_rev@\";\n      inputs.nixpkgs.follows = \"nixpkgs\";\n    };";
     fi)
     $(if [ "\$PROJECT_TYPE" == "rust" ]; then
       echo \\

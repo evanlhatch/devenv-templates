@@ -1,4 +1,3 @@
-
 {
   description = "A Nix Flake for generating devenv-based project templates";
 
@@ -18,13 +17,7 @@
       url = "github:pyproject-nix/uv2nix"; # Consider pinning
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    ty-source = {
-      type = "git";
-      url = "https://github.com/astral-sh/ty.git"; # Full Git URL
-      rev = "81c2bf20a8995337d799953f9003cfabd860b943";
-      flake = false;
-      allRefs = true; # Fetch all refs
-    };
+    # ty-source was removed
     
     # Rust-specific inputs
     crane = {
@@ -42,7 +35,8 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, devenv-sh, uv2nix, crane, fenix, deadnix, ty-source, ... }@inputs:
+  # Removed ty-source from the function signature
+  outputs = { self, nixpkgs, flake-utils, devenv-sh, uv2nix, crane, fenix, deadnix, ... }@inputs:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
@@ -52,47 +46,30 @@
           ];
         };
 
-        # Helper to build 'ty' if needed from pinned source
-        tyFromSource = pkgs.rustPlatform.buildRustPackage {
-          pname = "ty-cli-from-source";
-          version = "git-${inputs.ty-source.shortRev or "unknown"}"; # Version from shortRev
-          src = inputs.ty-source;
-          cargoLock.lockFile = "${inputs.ty-source}/Cargo.lock"; # Use Cargo.lock from src
-          # Add necessary buildInputs for ty if any, e.g.:
-          # buildInputs = [ pkgs.openssl pkgs.pkg-config ]; 
-        };
-        # Prefer ty from nixpkgs if it exists and is recent enough, otherwise try building from source.
-        tyPackage = pkgs.ty or tyFromSource;
+        # tyFromSource and related tyPackage logic removed.
+        # If pkgs.ty exists, it can be used directly. Otherwise, ty features might be limited.
+        # For the template's devShell, we can just try to include pkgs.ty.
         
-        # Create the init-project script with variable substitution (current method using runCommand + sed)
         init-project-script = pkgs.runCommand "init-project.sh" {
           src = ./init-project.sh;
-          nativeBuildInputs = [ pkgs.gnused pkgs.makeWrapper ]; # makeWrapper for wrapProgram
+          nativeBuildInputs = [ pkgs.gnused pkgs.makeWrapper ];
           
-          # Template paths
           template_base_path = "${self}/template_base";
           template_python_path = "${self}/template_python";
           template_rust_path = "${self}/template_rust";
           
-          # Input URLs for generated projects - Pass pinned versions where possible
           inputs_nixpkgs_url = inputs.nixpkgs.meta.original.url or inputs.nixpkgs.url;
           inputs_devenv_url = inputs.devenv-sh.meta.original.url or inputs.devenv-sh.url;
           inputs_flake_utils_url = inputs.flake-utils.meta.original.url or inputs.flake-utils.url;
-          
           inputs_uv2nix_url = inputs.uv2nix.meta.original.url or inputs.uv2nix.url;
           inputs_uv2nix_rev = inputs.uv2nix.rev or (inputs.uv2nix.meta.original.rev or "main");
           
-          # For ty-source, pass the pinned URL and REV if defined
-          inputs_ty_source_url = inputs.ty-source.url; # This will be the full .git URL
-          # If init-project.sh is updated to use rev for ty-source:
-          # inputs_ty_source_rev = inputs.ty-source.rev or ""; 
+          # inputs_ty_source_url removed from here
           
           inputs_crane_url = inputs.crane.meta.original.url or inputs.crane.url;
           inputs_fenix_url = inputs.fenix.meta.original.url or inputs.fenix.url;
           
-          # Tool paths for sed replacement in script (if script uses @tool_name@)
-          # Alternatively, wrapProgram (as currently done) is better.
-          sd_tool_path = "${pkgs.sd}/bin/sd"; # Renamed to avoid conflict if script also uses 'sd' var
+          sd_tool_path = "${pkgs.sd}/bin/sd";
           coreutils_tool_path = "${pkgs.coreutils}/bin";
           gnugrep_tool_path = "${pkgs.gnugrep}/bin";
           findutils_tool_path = "${pkgs.findutils}/bin";
@@ -105,40 +82,22 @@
           cp $src $out/bin/init-project.sh
           chmod +x $out/bin/init-project.sh
           
-          # Replace template paths
           sed -i "s|@template_base_path@|$template_base_path|g" $out/bin/init-project.sh
           sed -i "s|@template_python_path@|$template_python_path|g" $out/bin/init-project.sh
           sed -i "s|@template_rust_path@|$template_rust_path|g" $out/bin/init-project.sh
           
-          # Replace input URLs (ensure init-project.sh expects these exact @variable@ names)
           sed -i "s|@inputs_nixpkgs_url@|$inputs_nixpkgs_url|g" $out/bin/init-project.sh
           sed -i "s|@inputs_devenv_url@|$inputs_devenv_url|g" $out/bin/init-project.sh
           sed -i "s|@inputs_flake_utils_url@|$inputs_flake_utils_url|g" $out/bin/init-project.sh
           sed -i "s|@inputs_uv2nix_url@|$inputs_uv2nix_url|g" $out/bin/init-project.sh
           sed -i "s|@inputs_uv2nix_rev@|$inputs_uv2nix_rev|g" $out/bin/init-project.sh
-          sed -i "s|@inputs_ty_source_url@|$inputs_ty_source_url|g" $out/bin/init-project.sh
-          # If passing ty_source_rev:
-          # sed -i "s|@inputs_ty_source_rev@|$inputs_ty_source_rev|g" $out/bin/init-project.sh
+          # sed -i "s|@inputs_ty_source_url@|$inputs_ty_source_url|g" $out/bin/init-project.sh # This line will be removed from init-project.sh too
           sed -i "s|@inputs_crane_url@|$inputs_crane_url|g" $out/bin/init-project.sh
           sed -i "s|@inputs_fenix_url@|$inputs_fenix_url|g" $out/bin/init-project.sh
           
-          # Replace tool paths if script uses @tool_name@ placeholders for them
-          # This is an alternative to wrapProgram if script expects to find tools via these vars.
-          # sed -i "s|@sd@|$sd_tool_path|g" $out/bin/init-project.sh 
-          # sed -i "s|@git@|$git_tool_path|g" $out/bin/init-project.sh
-          # etc.
-
-          # Add tools to PATH for the execution of init-project.sh
-          # This is crucial if the script calls commands like `git`, `sd`, `cp` directly.
           wrapProgram $out/bin/init-project.sh \
             --prefix PATH : ${pkgs.lib.makeBinPath [
-              pkgs.sd
-              pkgs.coreutils
-              pkgs.gnugrep
-              pkgs.findutils
-              pkgs.git
-              pkgs.bash # Bash is usually found via shebang, but good to ensure
-              pkgs.file # Used by init-project.sh
+              pkgs.sd pkgs.coreutils pkgs.gnugrep pkgs.findutils pkgs.git pkgs.bash pkgs.file
             ]}
         '';
         
@@ -150,7 +109,7 @@
           #!/usr/bin/env bash
           set -euo pipefail
           echo "Verifying init-project script..."
-          if [ ! -x "${init-project-package}/bin/init-project" ]; then # Check final package
+          if [ ! -x "${init-project-package}/bin/init-project" ]; then
             echo "Error: init-project script not found or not executable"
             exit 1
           fi
@@ -161,16 +120,16 @@
         appMeta = {
           description = "Generate devenv-based project templates";
           mainProgram = "init-project";
-          license = pkgs.lib.licenses.mit; # Assuming MIT
-          maintainers = [ pkgs.lib.maintainers.eelcoh ]; # Replace with actual maintainer
+          license = pkgs.lib.licenses.mit;
+          maintainers = [ pkgs.lib.maintainers.eelcoh ]; 
         };
         
       in {
         packages = {
           default = init-project-package;
-          init-project = init-project-package; # Alias for clarity
+          init-project = init-project-package;
           test-templates = test-templates-script;
-          ty = tyPackage; # Expose the ty package
+          # packages.ty removed (or could be pkgs.ty if it exists and is desired)
         };
         
         apps = {
@@ -188,12 +147,13 @@
             pkgs.git
             pkgs.sd
             pkgs.just
-            pkgs.nixpkgs-fmt # Switched to nixpkgs-fmt
-            (deadnix.packages.${system}.default or deadnix) # Robust deadnix access
+            pkgs.nixpkgs-fmt 
+            (deadnix.packages.${system}.default or deadnix) 
             pkgs.statix
-            init-project-package # For testing init-project from shell
-            test-templates-script # For running tests from shell
-            tyPackage # Make ty available in the template dev shell
+            init-project-package 
+            test-templates-script    
+            # tyPackage removed. Add pkgs.ty if available and needed for template dev.
+            pkgs.ty # Assuming pkgs.ty exists, otherwise remove or handle conditionally
           ];
           shellHook = ''
             echo "Welcome to the devenv-templates development environment!"
@@ -205,9 +165,8 @@
         checks = {
           build-check = self.packages.${system}.default;
           template-check = pkgs.runCommand "template-check" {
-            buildInputs = [ init-project-package ]; # Check the final packaged script
+            buildInputs = [ init-project-package ]; 
           } ''
-            # $init_project_package/bin/init-project should be the path
             if [ -x "${init-project-package}/bin/init-project" ]; then
               echo "init-project script verification passed!"
               touch $out
