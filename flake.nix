@@ -17,7 +17,6 @@
       url = "github:pyproject-nix/uv2nix"; # Consider pinning
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # ty-source was removed
     
     # Rust-specific inputs
     crane = {
@@ -35,7 +34,6 @@
     };
   };
 
-  # Removed ty-source from the function signature
   outputs = { self, nixpkgs, flake-utils, devenv-sh, uv2nix, crane, fenix, deadnix, ... }@inputs:
     flake-utils.lib.eachDefaultSystem (system:
       let
@@ -46,12 +44,12 @@
           ];
         };
         
-        substitutedInitScript = pkgs.substituteAll {
+        # Step 1: Substitute variables into the script text
+        substitutedInitScriptText = pkgs.substituteAll {
           src = ./init-project.sh;
-          name = "init-project-final.sh"; 
-          isExecutable = true;
+          name = "init-project-text-substituted.sh"; 
 
-          inherit (pkgs) bash; 
+          inherit (pkgs) bash; # For #!/usr/bin/env bash in init-project.sh to resolve bash correctly
 
           template_base_path = "${self}/template_base";
           template_python_path = "${self}/template_python";
@@ -64,8 +62,15 @@
           inputs_uv2nix_rev = inputs.uv2nix.rev or (inputs.uv2nix.meta.original.rev or "main"); 
           inputs_crane_url = "github:ipetkov/crane";
           inputs_fenix_url = "github:nix-community/fenix";
-          
-          PATH = pkgs.lib.makeBinPath [
+          # No PATH substitution here in the text
+        };
+
+        # Step 2: Create an executable script package that runs the substituted script
+        # and has the necessary tools in its PATH.
+        initProjectAppProgram = pkgs.writeShellScriptBin "init-project-app" ''
+          #!${pkgs.bash}/bin/bash
+          # This PATH will be available when substitutedInitScriptText (now $1) is executed
+          export PATH="${pkgs.lib.makeBinPath [
             pkgs.coreutils 
             pkgs.sd
             pkgs.git
@@ -73,14 +78,16 @@
             pkgs.findutils 
             pkgs.file 
             pkgs.bash 
-          ];
-        };
+          ]}:$PATH"
+          
+          exec "${substitutedInitScriptText}" "$@" # Execute the substituted script text
+        '';
         
         test-templates-script = pkgs.writeShellScriptBin "test-templates" ''
           #!/usr/bin/env bash
           set -euo pipefail
           echo "Verifying init-project script..."
-          if [ ! -x "${substitutedInitScript}" ]; then 
+          if [ ! -x "${initProjectAppProgram}/bin/init-project-app" ]; then 
             echo "Error: init-project script not found or not executable"
             exit 1
           fi
@@ -90,22 +97,22 @@
         
         appMeta = {
           description = "Generate devenv-based project templates";
-          mainProgram = "init-project";
+          mainProgram = "init-project-app"; # Corresponds to the binary in initProjectAppProgram
           license = pkgs.lib.licenses.mit;
           maintainers = [ pkgs.lib.maintainers.eelcoh ]; 
         };
         
       in {
         packages = {
-          default = substitutedInitScript; 
-          init-project = substitutedInitScript;
+          default = initProjectAppProgram; 
+          init-project = initProjectAppProgram; # The app wrapper is the package
           test-templates = test-templates-script;
         };
         
         apps = {
           init-project = { 
             type = "app"; 
-            program = "${substitutedInitScript}"; 
+            program = "${initProjectAppProgram}/bin/init-project-app"; 
             meta = appMeta; 
           };
           default = self.apps.${system}.init-project;
@@ -124,14 +131,13 @@
             pkgs.nixpkgs-fmt 
             (deadnix.packages.${system}.default or deadnix) 
             pkgs.statix
-            substitutedInitScript 
+            initProjectAppProgram # For testing the app from the dev shell
             test-templates-script
             pkgs.shellcheck 
-            # pkgs.ty removed
           ];
           shellHook = ''
             echo "Welcome to the devenv-templates development environment!"
-            echo "Use 'init-project <project-type> <project-name>' to test template generation."
+            echo "Use 'init-project-app <project-type> <project-name>' to test template generation."
             echo "Use 'test-templates' to run template generation tests."
           '';
         };
@@ -139,13 +145,13 @@
         checks = {
           build-check = self.packages.${system}.default; 
           template-check = pkgs.runCommand "template-check" {
-            # No buildInputs needed as substitutedInitScript is a store path
+            # Check if initProjectAppProgram is executable
           } ''
-            if [ -x "${substitutedInitScript}" ]; then
-              echo "init-project script verification passed!"
+            if [ -x "${initProjectAppProgram}/bin/init-project-app" ]; then
+              echo "init-project app verification passed!"
               touch $out
             else
-              echo "Error: init-project script not found or not executable"
+              echo "Error: init-project app not found or not executable"
               exit 1
             fi
           '';
