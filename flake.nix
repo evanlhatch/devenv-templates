@@ -11,7 +11,7 @@
     devenv-sh.inputs.nixpkgs.follows = "nixpkgs";
 
     # For Python template
-    uv2nix.url = "github:astral-sh/uv2nix/main"; # For uv.nix generation
+    uv2nix.url = "github:astral-sh/uv2nix?ref=main"; # For uv.nix generation
     ty-source.url = "github:astral-sh/ty"; # Source for 'ty' if not in nixpkgs yet
     ty-source.flake = false; # Assuming it's not a flake, adjust if it is
 
