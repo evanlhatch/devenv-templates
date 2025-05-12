@@ -1,3 +1,4 @@
+\
 {
   description = "A Nix Flake for generating devenv-based project templates";
 
@@ -44,17 +45,36 @@
           ];
         };
         
-        # Step 1: Substitute variables into the script text
+        generatedProjectConfigContent = ''
+          # This file is auto-generated. Customize project settings here.
+          {
+            projectName = "{{PROJECT_NAME}}";
+            projectType = "{{PROJECT_TYPE}}";
+
+            # Python-specific settings (only relevant if projectType is "python")
+            pythonVersion = "{{PYTHON_VERSION}}"; # e.g., "3.11"
+            manageDependenciesWithUv2nix = {{MANAGE_DEPS_WITH_UV2NIX}};
+            uv2nixConfig.pureEval = false; # For uv2nix *tool* execution (allows network)
+
+            # Rust-specific settings (only relevant if projectType is "rust")
+            rustEdition = "{{RUST_EDITION}}"; # e.g., "2021"
+            # rustChannel = "stable"; # Or "nightly", "beta" - can be added
+          }
+        '';
+        generatedProjectConfig = pkgs.writeText "project_config.nix.from_flake" generatedProjectConfigContent;
+
         substitutedInitScriptText = pkgs.substituteAll {
           src = ./init-project.sh;
           name = "init-project-text-substituted.sh"; 
           isExecutable = true;
 
-          inherit (pkgs) bash; # For #!/usr/bin/env bash in init-project.sh to resolve bash correctly
+          inherit (pkgs) bash; 
 
           template_base_path = "${self}/template_base";
           template_python_path = "${self}/template_python";
           template_rust_path = "${self}/template_rust";
+
+          generated_project_config_path = generatedProjectConfig;
 
           inputs_nixpkgs_url = "github:NixOS/nixpkgs/nixos-unstable";
           inputs_devenv_url = "github:cachix/devenv/v1.0.8";
@@ -63,25 +83,16 @@
           inputs_uv2nix_rev = inputs.uv2nix.rev or (inputs.uv2nix.meta.original.rev or "main"); 
           inputs_crane_url = "github:ipetkov/crane";
           inputs_fenix_url = "github:nix-community/fenix";
-          # No PATH substitution here in the text
         };
 
-        # Step 2: Create an executable script package that runs the substituted script
-        # and has the necessary tools in its PATH.
         initProjectAppProgram = pkgs.writeShellScriptBin "init-project-app" ''
           #!${pkgs.bash}/bin/bash
-          # This PATH will be available when substitutedInitScriptText (now $1) is executed
           export PATH="${pkgs.lib.makeBinPath [
-            pkgs.coreutils 
-            pkgs.sd
-            pkgs.git
-            pkgs.gnugrep 
-            pkgs.findutils 
-            pkgs.file 
-            pkgs.bash 
+            pkgs.coreutils pkgs.sd pkgs.git pkgs.gnugrep 
+            pkgs.findutils pkgs.file pkgs.bash 
           ]}:$PATH"
           
-          ${pkgs.bash}/bin/bash "${substitutedInitScriptText}" "$@" # Execute the substituted script text WITH BASH
+          ${pkgs.bash}/bin/bash "${substitutedInitScriptText}" "$@"
         '';
         
         test-templates-script = pkgs.writeShellScriptBin "test-templates" ''
@@ -98,7 +109,7 @@
         
         appMeta = {
           description = "Generate devenv-based project templates";
-          mainProgram = "init-project-app"; # Corresponds to the binary in initProjectAppProgram
+          mainProgram = "init-project-app";
           license = pkgs.lib.licenses.mit;
           maintainers = [ pkgs.lib.maintainers.eelcoh ]; 
         };
@@ -106,7 +117,7 @@
       in {
         packages = {
           default = initProjectAppProgram; 
-          init-project = initProjectAppProgram; # The app wrapper is the package
+          init-project = initProjectAppProgram; 
           test-templates = test-templates-script;
         };
         
@@ -126,15 +137,9 @@
         
         devShells.default = pkgs.mkShell {
           buildInputs = [
-            pkgs.git
-            pkgs.sd
-            pkgs.just
-            pkgs.nixpkgs-fmt 
+            pkgs.git pkgs.sd pkgs.just pkgs.nixpkgs-fmt 
             (deadnix.packages.${system}.default or deadnix) 
-            pkgs.statix
-            initProjectAppProgram # For testing the app from the dev shell
-            test-templates-script
-            pkgs.shellcheck 
+            pkgs.statix initProjectAppProgram test-templates-script pkgs.shellcheck 
           ];
           shellHook = ''
             echo "Welcome to the devenv-templates development environment!"
@@ -146,7 +151,6 @@
         checks = {
           build-check = self.packages.${system}.default; 
           template-check = pkgs.runCommand "template-check" {
-            # Check if initProjectAppProgram is executable
           } ''
             if [ -x "${initProjectAppProgram}/bin/init-project-app" ]; then
               echo "init-project app verification passed!"

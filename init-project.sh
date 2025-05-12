@@ -46,6 +46,7 @@ set -euo pipefail
 #   # inputs_ty_source_url = inputs.ty-source.url; # Removed
 #   inputs_crane_url = inputs.crane.url;
 #   inputs_fenix_url = inputs.fenix.url;
+#   generated_project_config_path = generatedProjectConfig; # Path to Nix-generated config
 # };
 
 # --- Configuration ---
@@ -129,35 +130,20 @@ cp -rT "$BASE_TEMPLATE_DIR/" "$TARGET_DIR/" # -T treats source as a directory
 mv "${TARGET_DIR}/.gitignore_template" "${TARGET_DIR}/.gitignore"
 mv "${TARGET_DIR}/justfile_template" "${TARGET_DIR}/Justfile"
 mv "${TARGET_DIR}/README.md_template" "${TARGET_DIR}/README.md"
-mv "${TARGET_DIR}/project_config.nix_template" "${TARGET_DIR}/project_config.nix"
+# project_config.nix_template is no longer directly moved if we use a pre-generated one.
+# If @generated_project_config_path@ is used, we'll cp that.
+# Otherwise, the old mv for project_config.nix_template should be removed.
+# For now, assume project_config.nix is handled by the cp from @generated_project_config_path@
+if [ -f "${TARGET_DIR}/project_config.nix_template" ]; then
+  rm "${TARGET_DIR}/project_config.nix_template"
+fi 
 
-# 1. Create initial project_config.nix based on choices
-cat << EOF > "${TARGET_DIR}/project_config.nix"
-# This file is auto-generated. Customize project settings here.
-{
-  projectName = "${PROJECT_NAME}";
-  projectType = "${PROJECT_TYPE}";
 
-  # Python-specific settings (only relevant if projectType is "python")
-  pythonVersion = "${PYTHON_VERSION}"; # e.g., "3.11"
-  manageDependenciesWithUv2nix = ${MANAGE_DEPS_WITH_UV2NIX};
-  uv2nixConfig.pureEval = false; # For uv2nix *tool* execution (allows network)
-
-  # Rust-specific settings (only relevant if projectType is "rust")
-  rustEdition = "${RUST_EDITION}"; # e.g., "2021"
-  # rustChannel = "stable"; # Or "nightly", "beta" - can be added
-
-  # Common settings you might want to expose for editorconfig, etc.
-  # editorconfig = {
-  #   charset = "utf-8";
-  #   end_of_line = "lf";
-  #   insert_final_newline = true;
-  #   indent_style = "space";
-  #   indent_size = 2;
-  # };
-}
-EOF
-log_info "Created project_config.nix"
+# 1. Copy pre-generated project_config.nix from flake
+log_info "Copying pre-generated project_config.nix template..."
+cp "@generated_project_config_path@" "${TARGET_DIR}/project_config.nix"
+# Placeholders like {{PROJECT_NAME}} will be replaced by the 'sd' commands later.
+log_info "Copied project_config.nix template."
 
 # 2. Create devenv.yaml with pinned inputs from the template flake
 log_info "Creating devenv.yaml..."
