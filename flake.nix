@@ -4,6 +4,8 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    fenix-toolset.url = "github:nix-community/fenix/fenix-24.05";
+    deadnix.url = "github:astro/deadnix";
 
     # Inputs that the *generated project's flake.nix* will reference.
     # We define them here so the init script can pin them in the generated devenv.yaml.
@@ -12,6 +14,7 @@
 
     # For Python template
     uv2nix = {
+      type = "git";
       url = "https://github.com/astral-sh/uv2nix.git";
       rev = "72496717997f132f3885c829e67f263818638775";
     }; # For uv.nix generation

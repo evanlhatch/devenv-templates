@@ -41,8 +41,8 @@ set -euo pipefail
 #   inputs_nixpkgs_url = inputs.nixpkgs.url;
 #   inputs_devenv_url = inputs.devenv-sh.url;
 #   inputs_flake_utils_url = inputs.flake-utils.url;
-#   inputs_uv2nix_url = inputs.uv2nix.url; # Will become inputs.uv2nix.url from attrset
-#   inputs_uv2nix_rev = inputs.uv2nix.rev; # New addition
+#   inputs_uv2nix_url = inputs.uv2nix.url;
+#   inputs_uv2nix_rev = inputs.uv2nix.rev;
 #   inputs_ty_source_url = inputs.ty-source.url;
 #   inputs_crane_url = inputs.crane.url;
 #   inputs_fenix_url = inputs.fenix.url;
@@ -88,10 +88,18 @@ RUST_EDITION=$DEFAULT_RUST_EDITION
 
 for arg in "$@"; do
   case $arg in
-    python-version=*) PYTHON_VERSION="${arg#*=}" ;;
-    manage-deps-with-uv2nix=*) MANAGE_DEPS_WITH_UV2NIX="${arg#*=}" ;;
-    rust-edition=*) RUST_EDITION="${arg#*=}" ;;
-    *) log_error "Unknown argument: $arg" ;;
+    python-version=*)
+      PYTHON_VERSION="${arg#*=}"
+      ;;
+    manage-deps-with-uv2nix=*)
+      MANAGE_DEPS_WITH_UV2NIX="${arg#*=}"
+      ;;
+    rust-edition=*)
+      RUST_EDITION="${arg#*=}"
+      ;;
+    *)
+      log_error "Unknown argument: $arg"
+      ;;
   esac
 done
 
@@ -191,17 +199,12 @@ cat << EOF > "${TARGET_DIR}/flake.nix"
 
     # Conditionally add language-specific inputs based on PROJECT_TYPE
     # (These are used by the devenv modules)
-    \$(if [ "\$PROJECT_TYPE" == "python" ]; then
+    $(if [ "\$PROJECT_TYPE" == "python" ]; then
       echo \\
-    "uv2nix = {
-      url = \\"@inputs_uv2nix_url@\\";
-      rev = \\"@inputs_uv2nix_rev@\\";
-      inputs.nixpkgs.follows = \\"nixpkgs\\";
-    };
-    ty-source.url = \\"@inputs_ty_source_url@\\"; # If building 'ty' from source
+    "uv2nix = {\n      url = \"@inputs_uv2nix_url@\";\n      rev = \"@inputs_uv2nix_rev@\";\n      inputs.nixpkgs.follows = \"nixpkgs\";\n    };\n    ty-source.url = \\"@inputs_ty_source_url@\\"; # If building 'ty' from source
     ty-source.flake = false;";
     fi)
-    \$(if [ "\$PROJECT_TYPE" == "rust" ]; then
+    $(if [ "\$PROJECT_TYPE" == "rust" ]; then
       echo \\
     "crane.url = \\"@inputs_crane_url@\\";
     crane.inputs.nixpkgs.follows = \\"nixpkgs\\";
@@ -325,7 +328,9 @@ log_info "Initializing Git repository in \${TARGET_DIR}..."
 pushd "\$TARGET_DIR" > /dev/null
   git init -b main
   # Add example scripts to be executable if they exist
-  if [ -d "example_scripts" ]; then chmod +x example_scripts/* || true; fi
+  if [ -d "example_scripts" ]; then
+    chmod +x example_scripts/* || true
+  fi
   git add .
   git commit -m "Initial commit: scaffolded \${PROJECT_TYPE} project '\${PROJECT_NAME}' via template"
 popd > /dev/null
