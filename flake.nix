@@ -48,6 +48,7 @@
         substitutedInitScriptText = pkgs.substituteAll {
           src = ./init-project.sh;
           name = "init-project-text-substituted.sh"; 
+          isExecutable = true;
 
           inherit (pkgs) bash; # For #!/usr/bin/env bash in init-project.sh to resolve bash correctly
 
