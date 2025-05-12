@@ -19,6 +19,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     ty-source = {
+      type = "git";
       url = "https://github.com/astral-sh/ty.git"; # Full Git URL
       rev = "81c2bf20a8995337d799953f9003cfabd860b943";
       flake = false;
