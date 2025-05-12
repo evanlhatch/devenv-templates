@@ -19,8 +19,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     ty-source = {
-      url = "github:astral-sh/ty";
-      rev = "81c2bf20a8995337d799953f9003cfabd860b943"; # Pinned ty-source
+      url = "https://github.com/astral-sh/ty.git"; // Full Git URL
+      rev = "81c2bf20a8995337d799953f9003cfabd860b943";
       flake = false;
     };
     
@@ -81,7 +81,7 @@
           inputs_uv2nix_rev = inputs.uv2nix.rev or (inputs.uv2nix.meta.original.rev or "main");
           
           # For ty-source, pass the pinned URL and REV if defined
-          inputs_ty_source_url = inputs.ty-source.url; # This will be github:astral-sh/ty
+          inputs_ty_source_url = inputs.ty-source.url; # This will be the full .git URL
           # If init-project.sh is updated to use rev for ty-source:
           # inputs_ty_source_rev = inputs.ty-source.rev or ""; 
           
