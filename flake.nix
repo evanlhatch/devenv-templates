@@ -4,8 +4,15 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    fenix-toolset.url = "github:nix-community/fenix/fenix-24.05";
-    deadnix.url = "github:astro/deadnix";
+    fenix-toolset = {
+      url = "github:nix-community/fenix";
+      ref = "fenix-24.05";
+    };
+    deadnix = {
+      url = "https://github.com/astro/deadnix.git";
+      rev = "99a502411ff400c7ea95834a3e3101591205a965";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     # Inputs that the *generated project's flake.nix* will reference.
     # We define them here so the init script can pin them in the generated devenv.yaml.
