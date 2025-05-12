@@ -66,8 +66,8 @@
           
           # inputs_ty_source_url removed from here
           
-          inputs_crane_url = inputs.crane.meta.original.url or inputs.crane.url;
-          inputs_fenix_url = inputs.fenix.meta.original.url or inputs.fenix.url;
+          inputs_crane_url = self.inputs.crane.url; # Accessing the originally defined URL
+          inputs_fenix_url = self.inputs.fenix.url; # Accessing the originally defined URL
           
           sd_tool_path = "${pkgs.sd}/bin/sd";
           coreutils_tool_path = "${pkgs.coreutils}/bin";
