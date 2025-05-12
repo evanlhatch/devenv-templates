@@ -66,8 +66,8 @@
           
           # inputs_ty_source_url removed from here
           
-          inputs_crane_url = self.inputs.crane.url; # Accessing the originally defined URL
-          inputs_fenix_url = self.inputs.fenix.url; # Accessing the originally defined URL
+          inputs_crane_url = "github:ipetkov/crane"; # Using the literal string from top-level inputs
+          inputs_fenix_url = "github:nix-community/fenix"; # Using the literal string from top-level inputs
           
           sd_tool_path = "${pkgs.sd}/bin/sd";
           coreutils_tool_path = "${pkgs.coreutils}/bin";
