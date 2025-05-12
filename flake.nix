@@ -1,4 +1,3 @@
-\
 {
   description = "A Nix Flake for generating devenv-based project templates";
 
