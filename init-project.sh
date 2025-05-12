@@ -41,7 +41,8 @@ set -euo pipefail
 #   inputs_nixpkgs_url = inputs.nixpkgs.url;
 #   inputs_devenv_url = inputs.devenv-sh.url;
 #   inputs_flake_utils_url = inputs.flake-utils.url;
-#   inputs_uv2nix_url = inputs.uv2nix.url;
+#   inputs_uv2nix_url = inputs.uv2nix.url; # Will become inputs.uv2nix.url from attrset
+#   inputs_uv2nix_rev = inputs.uv2nix.rev; # New addition
 #   inputs_ty_source_url = inputs.ty-source.url;
 #   inputs_crane_url = inputs.crane.url;
 #   inputs_fenix_url = inputs.fenix.url;
@@ -87,18 +88,10 @@ RUST_EDITION=$DEFAULT_RUST_EDITION
 
 for arg in "$@"; do
   case $arg in
-    python-version=*)
-      PYTHON_VERSION="${arg#*=}"
-      ;;
-    manage-deps-with-uv2nix=*)
-      MANAGE_DEPS_WITH_UV2NIX="${arg#*=}"
-      ;;
-    rust-edition=*)
-      RUST_EDITION="${arg#*=}"
-      ;;
-    *)
-      log_error "Unknown argument: $arg"
-      ;;
+    python-version=*) PYTHON_VERSION="${arg#*=}" ;;
+    manage-deps-with-uv2nix=*) MANAGE_DEPS_WITH_UV2NIX="${arg#*=}" ;;
+    rust-edition=*) RUST_EDITION="${arg#*=}" ;;
+    *) log_error "Unknown argument: $arg" ;;
   esac
 done
 
@@ -198,19 +191,22 @@ cat << EOF > "${TARGET_DIR}/flake.nix"
 
     # Conditionally add language-specific inputs based on PROJECT_TYPE
     # (These are used by the devenv modules)
-    $(if [ "$PROJECT_TYPE" == "python" ]; then
-      echo \
-    "uv2nix.url = \"@inputs_uv2nix_url@\";
-    uv2nix.inputs.nixpkgs.follows = \"nixpkgs\";
-    ty-source.url = \"@inputs_ty_source_url@\"; # If building 'ty' from source
+    \$(if [ "\$PROJECT_TYPE" == "python" ]; then
+      echo \\
+    "uv2nix = {
+      url = \\"@inputs_uv2nix_url@\\";
+      rev = \\"@inputs_uv2nix_rev@\\";
+      inputs.nixpkgs.follows = \\"nixpkgs\\";
+    };
+    ty-source.url = \\"@inputs_ty_source_url@\\"; # If building 'ty' from source
     ty-source.flake = false;";
     fi)
-    $(if [ "$PROJECT_TYPE" == "rust" ]; then
-      echo \
-    "crane.url = \"@inputs_crane_url@\";
-    crane.inputs.nixpkgs.follows = \"nixpkgs\";
-    fenix.url = \"@inputs_fenix_url@\";
-    fenix.inputs.nixpkgs.follows = \"nixpkgs\";";
+    \$(if [ "\$PROJECT_TYPE" == "rust" ]; then
+      echo \\
+    "crane.url = \\"@inputs_crane_url@\\";
+    crane.inputs.nixpkgs.follows = \\"nixpkgs\\";
+    fenix.url = \\"@inputs_fenix_url@\\";
+    fenix.inputs.nixpkgs.follows = \\"nixpkgs\\";";
     fi)
   };
 
@@ -245,108 +241,106 @@ cat << EOF > "${TARGET_DIR}/flake.nix"
 EOF
 
 # --- Language-Specific File Copying & Setup ---
-if [ "$PROJECT_TYPE" == "python" ]; then
+if [ "\$PROJECT_TYPE" == "python" ]; then
   log_info "Copying Python-specific files..."
   # Assuming python_module.nix is the devenv module, pyproject.toml, etc.
-  cp -rT "$PYTHON_TEMPLATE_DIR/" "$TARGET_DIR/"
-  mv "${TARGET_DIR}/pyproject.toml_template" "${TARGET_DIR}/pyproject.toml"
-  if [ -f "${TARGET_DIR}/justfile_python_overlay" ]; then
-    cat "${TARGET_DIR}/justfile_python_overlay" >> "${TARGET_DIR}/Justfile"
-    rm "${TARGET_DIR}/justfile_python_overlay"
+  cp -rT "\$PYTHON_TEMPLATE_DIR/" "\$TARGET_DIR/"
+  mv "\${TARGET_DIR}/pyproject.toml_template" "\${TARGET_DIR}/pyproject.toml"
+  if [ -f "\${TARGET_DIR}/justfile_python_overlay" ]; then
+    cat "\${TARGET_DIR}/justfile_python_overlay" >> "\${TARGET_DIR}/Justfile"
+    rm "\${TARGET_DIR}/justfile_python_overlay"
   fi
-  if [ -f "${TARGET_DIR}/README_python.md" ]; then
-    echo -e "\n\n---\n" >> "${TARGET_DIR}/README.md"
-    cat "${TARGET_DIR}/README_python.md" >> "${TARGET_DIR}/README.md"
-    rm "${TARGET_DIR}/README_python.md"
+  if [ -f "\${TARGET_DIR}/README_python.md" ]; then
+    echo -e "\\n\\n---\\n" >> "\${TARGET_DIR}/README.md"
+    cat "\${TARGET_DIR}/README_python.md" >> "\${TARGET_DIR}/README.md"
+    rm "\${TARGET_DIR}/README_python.md"
   fi
-  if [ -d "${TARGET_DIR}/.vscode_template" ]; then # if vscode settings are in a dir
-    mv "${TARGET_DIR}/.vscode_template" "${TARGET_DIR}/.vscode"
-  elif [ -f "${TARGET_DIR}/settings.json_template" ]; then # if it's just the file
-    mkdir -p "${TARGET_DIR}/.vscode"
-    mv "${TARGET_DIR}/settings.json_template" "${TARGET_DIR}/.vscode/settings.json"
+  if [ -d "\${TARGET_DIR}/.vscode_template" ]; then # if vscode settings are in a dir
+    mv "\${TARGET_DIR}/.vscode_template" "\${TARGET_DIR}/.vscode"
+  elif [ -f "\${TARGET_DIR}/settings.json_template" ]; then # if it's just the file
+    mkdir -p "\${TARGET_DIR}/.vscode"
+    mv "\${TARGET_DIR}/settings.json_template" "\${TARGET_DIR}/.vscode/settings.json"
   fi
 
   # Create placeholder src directory and __init__.py
-  PYTHON_PACKAGE_NAME=$(echo "$PROJECT_NAME" | sd '-' '_' | tr '[:upper:]' '[:lower:]')
-  mkdir -p "${TARGET_DIR}/src/${PYTHON_PACKAGE_NAME}"
-  touch "${TARGET_DIR}/src/${PYTHON_PACKAGE_NAME}/__init__.py"
-  echo "print('Hello from ${PYTHON_PACKAGE_NAME}')" > "${TARGET_DIR}/src/${PYTHON_PACKAGE_NAME}/main.py"
+  PYTHON_PACKAGE_NAME=\$(echo "\$PROJECT_NAME" | sd '-' '_' | tr '[:upper:]' '[:lower:]')
+  mkdir -p "\${TARGET_DIR}/src/\${PYTHON_PACKAGE_NAME}"
+  touch "\${TARGET_DIR}/src/\${PYTHON_PACKAGE_NAME}/__init__.py"
+  echo "print('Hello from \${PYTHON_PACKAGE_NAME}')" > "\${TARGET_DIR}/src/\${PYTHON_PACKAGE_NAME}/main.py"
   # Create basic tests directory
-  mkdir -p "${TARGET_DIR}/tests"
-  touch "${TARGET_DIR}/tests/__init__.py"
-  echo "def test_example(): assert True" > "${TARGET_DIR}/tests/test_example.py"
+  mkdir -p "\${TARGET_DIR}/tests"
+  touch "\${TARGET_DIR}/tests/__init__.py"
+  echo "def test_example(): assert True" > "\${TARGET_DIR}/tests/test_example.py"
 
-elif [ "$PROJECT_TYPE" == "rust" ]; then
+elif [ "\$PROJECT_TYPE" == "rust" ]; then
   log_info "Copying Rust-specific files..."
-  cp -rT "$RUST_TEMPLATE_DIR/" "$TARGET_DIR/"
-  mv "${TARGET_DIR}/Cargo.toml_template" "${TARGET_DIR}/Cargo.toml"
-   if [ -f "${TARGET_DIR}/justfile_rust_overlay" ]; then
-    cat "${TARGET_DIR}/justfile_rust_overlay" >> "${TARGET_DIR}/Justfile"
-    rm "${TARGET_DIR}/justfile_rust_overlay"
+  cp -rT "\$RUST_TEMPLATE_DIR/" "\$TARGET_DIR/"
+  mv "\${TARGET_DIR}/Cargo.toml_template" "\${TARGET_DIR}/Cargo.toml"
+   if [ -f "\${TARGET_DIR}/justfile_rust_overlay" ]; then
+    cat "\${TARGET_DIR}/justfile_rust_overlay" >> "\${TARGET_DIR}/Justfile"
+    rm "\${TARGET_DIR}/justfile_rust_overlay"
   fi
-  if [ -f "${TARGET_DIR}/README_rust.md" ]; then
-    echo -e "\n\n---\n" >> "${TARGET_DIR}/README.md"
-    cat "${TARGET_DIR}/README_rust.md" >> "${TARGET_DIR}/README.md"
-    rm "${TARGET_DIR}/README_rust.md"
+  if [ -f "\${TARGET_DIR}/README_rust.md" ]; then
+    echo -e "\\n\\n---\\n" >> "\${TARGET_DIR}/README.md"
+    cat "\${TARGET_DIR}/README_rust.md" >> "\${TARGET_DIR}/README.md"
+    rm "\${TARGET_DIR}/README_rust.md"
   fi
-   if [ -d "${TARGET_DIR}/.vscode_template" ]; then
-    mv "${TARGET_DIR}/.vscode_template" "${TARGET_DIR}/.vscode"
-  elif [ -f "${TARGET_DIR}/settings.json_template" ]; then
-    mkdir -p "${TARGET_DIR}/.vscode"
-    mv "${TARGET_DIR}/settings.json_template" "${TARGET_DIR}/.vscode/settings.json"
+   if [ -d "\${TARGET_DIR}/.vscode_template" ]; then
+    mv "\${TARGET_DIR}/.vscode_template" "\${TARGET_DIR}/.vscode"
+  elif [ -f "\${TARGET_DIR}/settings.json_template" ]; then
+    mkdir -p "\${TARGET_DIR}/.vscode"
+    mv "\${TARGET_DIR}/settings.json_template" "\${TARGET_DIR}/.vscode/settings.json"
   fi
   # Create basic src/main.rs
-  mkdir -p "${TARGET_DIR}/src"
-  echo 'fn main() { println!("Hello, world from {}!", "${PROJECT_NAME}"); }' > "${TARGET_DIR}/src/main.rs"
+  mkdir -p "\${TARGET_DIR}/src"
+  echo 'fn main() { println!("Hello, world from {}!", "'"\${PROJECT_NAME}"'"); }' > "\${TARGET_DIR}/src/main.rs"
 fi
 
 # --- Placeholder Replacement (using sd) ---
 log_info "Replacing placeholders in copied files..."
-pushd "$TARGET_DIR" > /dev/null
+pushd "\$TARGET_DIR" > /dev/null
   # Common placeholders
-  find . -type f -not -path '*/.git/*' -not -name '*.lock' -print0 | while IFS= read -r -d $' ' file; do
-    if file -b --mime-type "$file" | grep -q text; then # Process only text files
-      sd '{{PROJECT_NAME}}' "$PROJECT_NAME" "$file" || true
-      sd '{{PROJECT_TYPE}}' "$PROJECT_TYPE" "$file" || true
-      PROJECT_NAME_SNAKE_CASE=$(echo "$PROJECT_NAME" | sd '-' '_' | tr '[:upper:]' '[:lower:]')
-      sd '{{PROJECT_NAME_SNAKE_CASE}}' "$PROJECT_NAME_SNAKE_CASE" "$file" || true
-      if [ "$PROJECT_TYPE" == "python" ]; then
-        sd '{{PYTHON_VERSION}}' "$PYTHON_VERSION" "$file" || true
-        PYTHON_VERSION_SHORT_NO_DOT=$(echo "$PYTHON_VERSION" | sd '[.]' '')
-        sd '{{PYTHON_VERSION_SHORT_NO_DOT}}' "$PYTHON_VERSION_SHORT_NO_DOT" "$file" || true
-        sd '{{MANAGE_DEPS_WITH_UV2NIX}}' "$MANAGE_DEPS_WITH_UV2NIX" "$file" || true
-        PYTHON_MAIN_MODULE_PATH="${PROJECT_NAME_SNAKE_CASE}.main" # Example
-        sd '{{PYTHON_MAIN_MODULE_PATH}}' "$PYTHON_MAIN_MODULE_PATH" "$file" || true
-      elif [ "$PROJECT_TYPE" == "rust" ]; then
-        sd '{{RUST_EDITION}}' "$RUST_EDITION" "$file" || true
+  find . -type f -not -path '*/.git/*' -not -name '*.lock' -print0 | while IFS= read -r -d \$'\\0' file; do
+    if file -b --mime-type "\$file" | grep -q text; then # Process only text files
+      sd '{{PROJECT_NAME}}' "\$PROJECT_NAME" "\$file" || true
+      sd '{{PROJECT_TYPE}}' "\$PROJECT_TYPE" "\$file" || true
+      PROJECT_NAME_SNAKE_CASE=\$(echo "\$PROJECT_NAME" | sd '-' '_' | tr '[:upper:]' '[:lower:]')
+      sd '{{PROJECT_NAME_SNAKE_CASE}}' "\$PROJECT_NAME_SNAKE_CASE" "\$file" || true
+      if [ "\$PROJECT_TYPE" == "python" ]; then
+        sd '{{PYTHON_VERSION}}' "\$PYTHON_VERSION" "\$file" || true
+        PYTHON_VERSION_SHORT_NO_DOT=\$(echo "\$PYTHON_VERSION" | sd '[.]' '')
+        sd '{{PYTHON_VERSION_SHORT_NO_DOT}}' "\$PYTHON_VERSION_SHORT_NO_DOT" "\$file" || true
+        sd '{{MANAGE_DEPS_WITH_UV2NIX}}' "\$MANAGE_DEPS_WITH_UV2NIX" "\$file" || true
+        PYTHON_MAIN_MODULE_PATH="\${PROJECT_NAME_SNAKE_CASE}.main" # Example
+        sd '{{PYTHON_MAIN_MODULE_PATH}}' "\$PYTHON_MAIN_MODULE_PATH" "\$file" || true
+      elif [ "\$PROJECT_TYPE" == "rust" ]; then
+        sd '{{RUST_EDITION}}' "\$RUST_EDITION" "\$file" || true
       fi
     fi
   done
 popd > /dev/null
 
 # --- Initialize Git Repository ---
-log_info "Initializing Git repository in ${TARGET_DIR}..."
-pushd "$TARGET_DIR" > /dev/null
+log_info "Initializing Git repository in \${TARGET_DIR}..."
+pushd "\$TARGET_DIR" > /dev/null
   git init -b main
   # Add example scripts to be executable if they exist
-  if [ -d "example_scripts" ]; then
-    chmod +x example_scripts/* || true
-  fi
+  if [ -d "example_scripts" ]; then chmod +x example_scripts/* || true; fi
   git add .
-  git commit -m "Initial commit: scaffolded ${PROJECT_TYPE} project '${PROJECT_NAME}' via template"
+  git commit -m "Initial commit: scaffolded \${PROJECT_TYPE} project '\${PROJECT_NAME}' via template"
 popd > /dev/null
 
 # --- Final Instructions ---
-log_info "✅ Project '${PROJECT_NAME}' initialized successfully in '${TARGET_DIR}'!"
+log_info "✅ Project '\${PROJECT_NAME}' initialized successfully in '\${TARGET_DIR}'!"
 echo ""
 echo "Next steps:"
-echo "  1. cd \"${TARGET_DIR}\""
+echo "  1. cd \\"\${TARGET_DIR}\\""
 echo "  2. (If you use direnv and haven't already whitelisted the path) direnv allow"
 echo "  3. Review devenv.nix, project_config.nix, and other generated files."
-if [ "$PROJECT_TYPE" == "python" ]; then
+if [ "\$PROJECT_TYPE" == "python" ]; then
   echo "  4. For Python projects, run: devenv script setup-python"
   echo "     (This creates a .venv and installs dependencies using uv)"
-  if [ "$MANAGE_DEPS_WITH_UV2NIX" == "true" ]; then
+  if [ "\$MANAGE_DEPS_WITH_UV2NIX" == "true" ]; then
     echo "  5. Optionally, to generate uv.nix: devenv script generate-uv-nix"
   fi
 fi
