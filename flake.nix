@@ -75,13 +75,13 @@
           inputs_flake_utils_url = "github:numtide/flake-utils";
           
           # Pass the full URL (which now includes the rev) for uv2nix
-          inputs_uv2nix_url = self.inputs.uv2nix.url;
+          inputs_uv2nix_url = "github:pyproject-nix/uv2nix/fe540e91c26f378c62bf6da365a97e848434d0cd";
           # init-project.sh expects a separate rev for uv2nix, so we extract it or default.
           # This is a bit fragile. Ideally, init-project.sh would be simplified.
           inputs_uv2nix_rev = "fe540e91c26f378c62bf6da365a97e848434d0cd"; # Explicitly pass the pinned rev 
           
-          inputs_crane_url = self.inputs.crane.url; 
-          inputs_fenix_url = self.inputs.fenix.url;
+          inputs_crane_url = "github:ipetkov/crane/dfd9a8dfd09db9aad544c4d3b6c47b12562544a5"; 
+          inputs_fenix_url = "github:nix-community/fenix/9e5d68514e6ad2d4c6236d6ed4488afeeeceade3";
         };
 
         initProjectAppProgram = pkgs.writeShellScriptBin "init-project-app" ''

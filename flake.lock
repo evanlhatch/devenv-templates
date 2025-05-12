@@ -73,6 +73,7 @@
       "original": {
         "owner": "ipetkov",
         "repo": "crane",
+        "rev": "dfd9a8dfd09db9aad544c4d3b6c47b12562544a5",
         "type": "github"
       }
     },
@@ -94,6 +95,7 @@
       "original": {
         "owner": "astro",
         "repo": "deadnix",
+        "rev": "d75457b95d7cfa82fcd60970939f76fccfce19e5",
         "type": "github"
       }
     },
@@ -174,6 +176,7 @@
       "original": {
         "owner": "nix-community",
         "repo": "fenix",
+        "rev": "9e5d68514e6ad2d4c6236d6ed4488afeeeceade3",
         "type": "github"
       }
     },
@@ -597,6 +600,7 @@
       "original": {
         "owner": "pyproject-nix",
         "repo": "uv2nix",
+        "rev": "fe540e91c26f378c62bf6da365a97e848434d0cd",
         "type": "github"
       }
     }
