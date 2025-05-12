@@ -81,7 +81,7 @@
             pkgs.bash 
           ]}:$PATH"
           
-          exec "${substitutedInitScriptText}" "$@" # Execute the substituted script text
+          ${pkgs.bash}/bin/bash "${substitutedInitScriptText}" "$@" # Execute the substituted script text WITH BASH
         '';
         
         test-templates-script = pkgs.writeShellScriptBin "test-templates" ''
