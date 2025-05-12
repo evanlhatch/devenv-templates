@@ -58,7 +58,7 @@
           template_python_path = "${self}/template_python";
           template_rust_path = "${self}/template_rust";
           
-          inputs_nixpkgs_url = inputs.nixpkgs.meta.original.url or inputs.nixpkgs.url;
+          inputs_nixpkgs_url = "github:NixOS/nixpkgs/nixos-unstable"; # Using the literal string from top-level inputs
           inputs_devenv_url = "github:cachix/devenv/v1.0.8"; # Using the literal string from top-level inputs
           inputs_flake_utils_url = "github:numtide/flake-utils"; # Using the literal string from top-level inputs
           inputs_uv2nix_url = "github:pyproject-nix/uv2nix"; # Using the literal string from top-level inputs
