@@ -1,0 +1,38 @@
+[package]
+name = "{{PROJECT_NAME_SNAKE_CASE}}"
+version = "0.1.0"
+edition = "{{RUST_EDITION}}"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# Add your Rust crate dependencies here. For example:
+# tokio = { version = "1", features = ["full"] }
+# serde = { version = "1.0", features = ["derive"] }
+# anyhow = "1.0"
+
+[dev-dependencies]
+# Add development-specific dependencies here, e.g., for testing:
+# criterion = "0.4"
+
+# Example for a binary project
+[[bin]]
+name = "{{PROJECT_NAME_SNAKE_CASE}}"
+path = "src/main.rs"
+
+# Example for a library project (comment out or remove [[bin]] section if this is a library)
+# [lib]
+# name = "{{PROJECT_NAME_SNAKE_CASE}}_lib"
+# path = "src/lib.rs"
+
+# Profile settings for optimization, debug symbols, etc.
+# [profile.dev]
+# opt-level = 0
+# debug = true
+
+# [profile.release]
+# opt-level = 3
+# debug = false
+# strip = "symbols" # or true
+# lto = "fat"
+# codegen-units = 1

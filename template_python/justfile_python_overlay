@@ -1,0 +1,31 @@
+# Python specific tasks for {{PROJECT_NAME}}
+lint: devenv-script-lint # Alias to devenv script
+    @echo "Running Python linting (Ruff & Ty) via devenv script..."
+    @devenv script lint
+
+format: devenv-script-format
+    @echo "Formatting Python code (Ruff) via devenv script..."
+    @devenv script format
+
+type-check: devenv-script-type-check
+    @echo "Type checking Python code (Ty) via devenv script..."
+    @devenv script type-check
+
+test: devenv-script-test
+    @echo "Running Python tests (pytest) via devenv script..."
+    @devenv script test
+
+setup: devenv-script-setup-python # Alias
+    @echo "Setting up Python environment for {{PROJECT_NAME}}..."
+    @devenv script setup-python
+
+# Example: Run the main Python application (assuming src/{{PROJECT_NAME_SNAKE_CASE}}/main.py)
+run *ARGS:
+    @echo "Running Python application {{PROJECT_NAME_SNAKE_CASE}}.main with uv..."
+    # Ensure venv is active or uv knows which python to use
+    uv run python -m {{PYTHON_MAIN_MODULE_PATH}} {{ARGS}}
+
+# If using uv2nix
+generate-uv-nix:
+    @echo "Generating uv.nix (if manageDependenciesWithUv2nix is true)..."
+    @devenv script generate-uv-nix

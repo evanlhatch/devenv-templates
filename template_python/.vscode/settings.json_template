@@ -1,0 +1,69 @@
+{
+  // VS Code Settings for Python ({{PROJECT_NAME}})
+
+  // Python Path & Linter/Formatter Configuration
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python", // Set by devenv or manually after `just setup`
+  "python.terminal.activateEnvironment": true,
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+
+  // Ruff Linter and Formatter (replaces flake8, isort, black, etc.)
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "charliermarsh.ruff",
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit", // ruff can do this
+      "source.fixAll": "explicit"
+    }
+  },
+  "ruff.lint.args": [],
+  "ruff.format.args": [],
+  // "ruff.path": [], // Should be found in PATH from devenv
+
+  // Ty Type Checker (Settings might vary based on Ty's VS Code extension if available)
+  // For now, relies on running `ty` via terminal or `just` tasks.
+
+  // Debugging configuration (using debugpy)
+  // A launch.json file is usually preferred for more complex configurations.
+  // This basic setting ensures debugpy is recognized.
+  // "python.languageServer": "Pylance", // Or Default, Jedi
+
+  // Files: Exclude common Python temp/cache files from explorer
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/.mypy_cache": true,
+    "**/.pytest_cache": true,
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/*.pyo": true,
+    "**/.venv": true
+  },
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/*/**": true,
+    "**/.hg/store/**": true,
+    "**/.venv/**": true,
+    "**/__pycache__/**": true
+  },
+
+  // Editor settings for Python
+  "python.analysis.typeCheckingMode": "basic", // Can be "off", "basic", or "strict"
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.diagnosticMode": "workspace",
+
+  // If using Nix language server (NIL) for .nix files
+  "[nix]": {
+    "editor.defaultFormatter": "jnoortheen.nix-ide",
+    "editor.formatOnSave": true
+  }
+}

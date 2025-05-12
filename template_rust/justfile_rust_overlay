@@ -1,0 +1,56 @@
+# Rust specific tasks for {{PROJECT_NAME}}
+
+# Build, run, test tasks (aliases to devenv scripts for consistency)
+build: devenv-script-build
+    @echo "Building {{PROJECT_NAME}} (Rust)..."
+    @devenv script build
+
+build-release: devenv-script-build-release
+    @echo "Building {{PROJECT_NAME}} (Rust) in release mode..."
+    @devenv script build-release
+
+run: devenv-script-run
+    @echo "Running {{PROJECT_NAME}} (Rust)..."
+    @devenv script run
+
+run-release: devenv-script-run-release
+    @echo "Running {{PROJECT_NAME}} (Rust) in release mode..."
+    @devenv script run-release
+
+test: devenv-script-test
+    @echo "Running Rust tests for {{PROJECT_NAME}}..."
+    @devenv script test
+
+fmt format: devenv-script-fmt  # `format` is an alias for `fmt`
+    @echo "Formatting Rust code for {{PROJECT_NAME}}..."
+    @devenv script fmt
+
+clippy lint: devenv-script-clippy # `lint` is an alias for `clippy`
+    @echo "Running Clippy for {{PROJECT_NAME}}..."
+    @devenv script clippy
+
+# Watch tasks
+watch-test: devenv-script-watch-test
+    @echo "Watching for changes and running tests (cargo watch)..."
+    @devenv script watch-test
+
+bacon bacon-test: devenv-script-bacon-test # `bacon-test` is an alias
+    @echo "Watching for changes and running tests (bacon)..."
+    @devenv script bacon-test
+
+# Dependency management tasks
+audit: devenv-script-audit
+    @echo "Auditing Rust dependencies for vulnerabilities..."
+    @devenv script audit
+
+check-outdated outdated: devenv-script-check-outdated
+    @echo "Checking for outdated Rust dependencies..."
+    @devenv script check-outdated
+
+update-deps: devenv-script-update-deps
+    @echo "Updating Rust dependencies (Cargo.lock)..."
+    @devenv script update-deps
+
+clean: devenv-script-clean
+    @echo "Cleaning Rust build artifacts..."
+    @devenv script clean

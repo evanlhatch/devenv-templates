@@ -1,0 +1,62 @@
+# ~/my-project-templates/.github/workflows/lint-templates.yml
+name: Lint Template Files
+
+on:
+  push:
+    branches:
+      - main # Or your default branch
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v26
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          # extra_nix_config: |
+          #   access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Cachix (optional, for devenv cache)
+        uses: cachix/cachix-action@v14
+        with:
+          name: devenv
+          # authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}' # Only if you have a private devenv cache
+
+      - name: Show Nix version
+        run: nix --version
+
+      - name: Build init-script-env (to get linters)
+        run: nix build .#init-script-env -L # -L for verbose output
+
+      - name: Check init-project.sh with ShellCheck
+        run: |
+          echo "Running ShellCheck on init-project.sh..."
+          # The init-script-env package from flake.nix should put shellcheck in PATH
+          # If not, use: result/bin/shellcheck init-project.sh
+          nix develop .#init-script-env --command shellcheck init-project.sh
+
+      - name: Format Nix files (Check mode)
+        run: |
+          echo "Checking Nix file formatting with nixpkgs-fmt..."
+          # The devShell from flake.nix should provide nixpkgs-fmt
+          nix develop .#default --command nixpkgs-fmt --check .
+
+      - name: Check EditorConfig
+        run: |
+          echo "Checking EditorConfig compliance..."
+          # The devShell from flake.nix should provide editorconfig-checker
+          nix develop .#default --command editorconfig-checker
+
+      # Add other checks as needed, e.g., linting template files themselves
+      # - name: Validate devenv.nix files (example, if you have a validation script)
+      #   run: |
+      #     find . -name "devenv.nix" -print0 | xargs -0 -I {} nix-instantiate --eval --strict {}

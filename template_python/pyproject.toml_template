@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{{PROJECT_NAME_SNAKE_CASE}}"
+version = "0.1.0"
+description = "A {{PROJECT_TYPE}} project: {{PROJECT_NAME}}"
+readme = "README.md"
+requires-python = ">={{PYTHON_VERSION}}"
+# Add your project dependencies here, e.g.:
+# dependencies = [
+#   "requests",
+#   "fastapi[all]",
+#   "pydantic>2.0",
+# ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    # Add other development-specific dependencies here
+]
+
+[project.scripts]
+# Define command-line entry points for your application, e.g.:
+# {{PROJECT_NAME_SNAKE_CASE}}-cli = "{{PROJECT_NAME_SNAKE_CASE}}.main:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]  # look in the src/ directory for packages
+
+# Ruff linter and formatter configuration
+# https://beta.ruff.rs/docs/configuration/
+[tool.ruff]
+line-length = 88
+target-version = "py{{PYTHON_VERSION_SHORT_NO_DOT}}"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "T20", "RUF"] # Common selection
+ignore = []
+# fixable = ["ALL"] # Enable autofix for all possible rules
+# unfixable = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "lf"
+
+# Pytest configuration
+# https://docs.pytest.org/en/latest/reference/reference.html#configuration-options
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --cov={{PROJECT_NAME_SNAKE_CASE}} --cov-report=term-missing"
+testpaths = [
+    "tests",
+    # "integration", # if you have integration tests in a separate folder
+]
+python_files = "test_*.py tests_*.py"
+python_classes = "Test* Tests*"
+python_functions = "test_* tests_*"
+
+# Coverage configuration (pytest-cov)
+# https://pytest-cov.readthedocs.io/en/latest/config.html
+[tool.coverage.run]
+source = ["{{PROJECT_NAME_SNAKE_CASE}}"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 80 # Example: fail if coverage is below 80%
+
+# Ty (Type Checker) configuration (if it uses pyproject.toml)
+# Consult Ty documentation for specific configuration options if available.
+# [tool.ty]
+# options = "..."

@@ -1,0 +1,17 @@
+# ~/my-project-templates/template_base/project_config.nix_template
+{
+  projectName = "{{PROJECT_NAME}}"; # Populated by init script
+  projectType = "{{PROJECT_TYPE}}"; # Populated by init script
+
+  # Python-specific (populated by init script if type is python)
+  pythonVersion = "{{PYTHON_VERSION}}";
+  manageDependenciesWithUv2nix = {{MANAGE_DEPS_WITH_UV2NIX}};
+  uv2nixConfig.pureEval = false; # For uv2nix tool itself (allows network)
+
+  # Rust-specific (populated by init script if type is rust)
+  rustEdition = "{{RUST_EDITION}}";
+  # rustChannel = "stable";
+
+  # Example: Toggle for enabling a service, can be used in devenv.nix
+  # enablePostgres = false;
+}

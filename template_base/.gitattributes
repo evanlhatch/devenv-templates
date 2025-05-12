@@ -1,0 +1,26 @@
+# Handle line endings automatically for files detected as text
+# and leave all files detected as binary untouched.
+* text=auto
+
+# Never normalize line endings for binary files
+*.png binary
+*.jpg binary
+*.gif binary
+*.jpeg binary
+*.pdf binary
+*.ico binary
+
+# Force LF line endings for specific file types
+*.sh text eol=lf
+*.bash text eol=lf
+*.py text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.nix text eol=lf
+*.toml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.just text eol=lf
+Justfile text eol=lf

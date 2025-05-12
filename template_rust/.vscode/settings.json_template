@@ -1,0 +1,72 @@
+{
+  // VS Code Settings for Rust ({{PROJECT_NAME}})
+
+  // Rust Analyzer Configuration
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer",
+    "editor.formatOnSave": true,
+    "editor.inlayHints.enabled": "onUnlessPressed" // Or "on", "off"
+  },
+  "rust-analyzer.checkOnSave.command": "clippy", // Use clippy for checks
+  "rust-analyzer.checkOnSave.allTargets": true,
+  // "rust-analyzer.checkOnSave.extraArgs": ["--all-features"],
+  "rust-analyzer.hover.actions.enable": true,
+  "rust-analyzer.inlayHints.typeHints.enable": true,
+  "rust-analyzer.inlayHints.chainingHints.enable": true,
+  "rust-analyzer.inlayHints.parameterHints.enable": true,
+  "rust-analyzer.procMacro.enable": true,
+  // If rust-analyzer has trouble finding the toolchain, you might explicitly set it,
+  // but it should pick up from PATH provided by devenv.
+  // "rust-analyzer.server.path": "", // Path to rust-analyzer executable if not in PATH
+  // "rust-analyzer.rustc.source": "discover", // Should find rust-src via RUST_SRC_PATH
+
+  // Linker setting for specific targets (e.g., if cross-compiling or using a custom linker)
+  // "rust-analyzer.cargo.target": null, // e.g., "x86_64-unknown-linux-gnu"
+
+  // Files: Exclude common Rust temp/cache files from explorer
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/target": true // Rust build output directory
+  },
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/*/**": true,
+    "**/.hg/store/**": true,
+    "**/target/**": true
+  },
+
+  // CodeLLDB (Debugger for Rust)
+  // Ensure you have the "vadimcn.vscode-lldb" extension installed.
+  // A launch.json file in .vscode/ is needed for debug configurations.
+  // Example launch.json entry:
+  // {
+  //   "type": "lldb",
+  //   "request": "launch",
+  //   "name": "Debug executable '{{PROJECT_NAME_SNAKE_CASE}}'",
+  //   "cargo": {
+  //     "args": [
+  //       "build",
+  //       "--bin={{PROJECT_NAME_SNAKE_CASE}}",
+  //       "--package={{PROJECT_NAME_SNAKE_CASE}}"
+  //     ],
+  //     "filter": {
+  //       "name": "{{PROJECT_NAME_SNAKE_CASE}}",
+  //       "kind": "bin"
+  //     }
+  //   },
+  //   "args": [],
+  //   "cwd": "${workspaceFolder}"
+  // },
+
+  // If using Nix language server (NIL) for .nix files
+  "[nix]": {
+    "editor.defaultFormatter": "jnoortheen.nix-ide",
+    "editor.formatOnSave": true
+  }
+}

@@ -1,0 +1,123 @@
+# {{PROJECT_NAME}}
+
+A {{PROJECT_TYPE}} project initialized with the devenv template.
+
+## Prerequisites
+
+- **Nix**: Ensure Nix is installed with Flakes support enabled. See [NixOS.org](https://nixos.org/download.html).
+- **Direnv** (Recommended): For automatic environment activation. See [direnv.net](https://direnv.net/).
+- **Infisical** (Optional): If using Infisical for secret management. See [Infisical.com](https://infisical.com/).
+
+## Getting Started
+
+1.  **Clone the repository (if you haven't already):**
+    ```bash
+    # If you generated this project locally, you are already in the directory.
+    # If cloning from a remote Git repository:
+    git clone <your-repo-url>
+    cd {{PROJECT_NAME}}
+    ```
+
+2.  **Allow Direnv (if using):**
+    ```bash
+    direnv allow
+    ```
+    This will automatically load the Nix Flake environment when you `cd` into the project directory.
+
+3.  **Manual Shell Activation (if not using Direnv):**
+    ```bash
+    nix develop
+    # or use the devenv CLI if installed globally or via the template's devShell
+    # devenv shell
+    ```
+
+4.  **Review Configuration:**
+    - `flake.nix`: Defines the Nix Flake, its inputs, and the development shell using `devenv`.
+    - `devenv.nix`: Main configuration for the `devenv` environment, importing common and language-specific modules.
+    - `project_config.nix`: Project-specific settings like name, type, language versions.
+    - `devenv_common_module.nix`: Common settings for all projects (NIL, Infisical).
+    - `{{PROJECT_TYPE}}_devenv_module.nix`: Language-specific settings for {{PROJECT_TYPE}}.
+    - `Justfile`: Contains `just` tasks for common operations.
+
+5.  **Install Language-Specific Dependencies / Setup Environment:**
+    Refer to the language-specific section below and the output of `devenv script list` or `just --list`.
+    For example, Python projects often have a `devenv script setup-python` or `just setup` task.
+
+## Infisical Setup (Optional)
+
+If your project uses Infisical for secrets management:
+
+1.  Ensure the Infisical CLI is installed (it's included in the devenv environment).
+2.  Create a `.env` file in the project root (this file is gitignored):
+    ```env
+    INFISICAL_TOKEN="your_infisical_universal_auth_or_service_token"
+    INFISICAL_PROJECT_ID="your_infisical_project_id"
+    INFISICAL_ENVIRONMENT="dev" # or "prod", "test", etc.
+    ```
+3.  When the devenv shell loads (via `direnv allow` or `nix develop`), it will attempt to:
+    - Detect the Infisical CLI.
+    - Read the `INFISICAL_TOKEN`, `INFISICAL_PROJECT_ID`, and `INFISICAL_ENVIRONMENT` from `.env`.
+    - Run `infisical export --format=shell` to inject secrets as environment variables into your shell.
+
+    You should see messages indicating whether secrets were successfully loaded.
+
+## Development Environment
+
+This project uses `devenv` to provide a reproducible development environment.
+
+- **Entering the Environment**: `direnv allow` (recommended) or `nix develop`.
+- **Available Tools**: Check `devenv.nix` and the language-specific module for a list of packages. Common tools like `git`, `gh`, `just`, `delta`, `ripgrep`, `fd`, `eza`, `bat` are usually included.
+- **IDE Integration**:
+    - **VS Code**: Recommended extensions are usually listed in language-specific README sections (e.g., `rust-analyzer` for Rust, Pylance/Ruff for Python). Settings for these are often provided in `.vscode/settings.json`.
+    - **Nix Language Server (NIL)**: Included for Nix file editing support.
+    - **EditorConfig**: `.editorconfig` is provided for consistent editor settings.
+
+## `Justfile` Tasks
+
+This project uses `just` as a command runner. Common tasks are defined in the `Justfile`.
+
+- List all available tasks: `just --list`
+- Common tasks often include:
+    - `just shell`: Enter the devenv shell.
+    - `just nix-update`: Update flake inputs.
+    - `just test-env`: Run devenv environment tests.
+    - `just lint`: Run linters.
+    - `just format`: Run formatters.
+    - `just build`: Build the project.
+    - `just test`: Run project tests.
+    - `just up` / `just down` / `just ps` / `just logs`: Manage devenv services.
+
+## Devenv Scripts
+
+`devenv` allows defining custom scripts. These are often wrapped by `just` tasks.
+
+- List available devenv scripts: `devenv script list`
+
+## Git Hooks
+
+Pre-commit hooks are managed by `devenv` and `pre-commit-hooks.nix`.
+- They are automatically enabled when you enter the devenv shell.
+- Common hooks include `nixpkgs-fmt` (Nix file formatting), `editorconfig-checker`, and language-specific linters/formatters.
+
+## Services
+
+`devenv` can manage development services (databases, etc.).
+- Check the `services` section in `devenv.nix`.
+- Control services using `devenv up`, `devenv down`, `devenv processes list`, `devenv logs <service-name>` or corresponding `just` tasks (`just up`, `just logs postgres`).
+
+## Customization
+
+- **Project Settings**: Modify `project_config.nix` for high-level settings.
+- **Devenv Environment**: Adjust `devenv.nix`, `devenv_common_module.nix`, or the language-specific `*_devenv_module.nix` to change packages, environment variables, scripts, services, etc.
+- **Just Tasks**: Edit the `Justfile` to add or modify tasks.
+- **Flake Inputs**: Update `flake.nix` to change versions of Nixpkgs, `devenv`, or other Flake inputs. Run `nix flake update` afterwards.
+
+## Troubleshooting
+
+- **Slow `nix develop` or `direnv allow`**: This can happen on the first run or after major changes as Nix downloads and builds dependencies. Subsequent runs should be faster.
+- **Cachix**: The generated `flake.nix` usually includes the `devenv.cachix.org` binary cache to speed up downloads for common `devenv` components.
+- **`devenv gc`**: If your Nix store is filling up, run `devenv gc` (or `just gc-devenv`) within the project to clean up old devenv generations for this specific project.
+
+---
+
+*This README is a template. Please update it with specific details about your project.*

@@ -1,0 +1,66 @@
+# ~/my-project-templates/template_base/justfile_template
+# Common tasks for all {{PROJECT_NAME}} projects (type: {{PROJECT_TYPE}})
+
+# Default task (can be overridden by language-specific overlays)
+default: list-scripts
+
+# List available devenv scripts
+list-scripts:
+    @echo "Available devenv scripts:"
+    @devenv script list
+
+# Enter the devenv shell (useful if not using direnv or if in a subshell)
+shell devenv-shell:
+    @echo "Entering devenv shell for {{PROJECT_NAME}}..."
+    @devenv shell
+
+# Update flake inputs
+nix-update update-flake:
+    @echo "Updating flake inputs for {{PROJECT_NAME}}..."
+    nix flake update
+
+# Run devenv tests
+test-env:
+    @echo "Running devenv environment tests for {{PROJECT_NAME}}..."
+    devenv test
+
+# Clean up old devenv GC roots for this project
+gc-devenv clean-devenv:
+    @echo "Cleaning up old devenv GC roots for {{PROJECT_NAME}}..."
+    devenv gc
+
+# Show devenv information
+info devenv-info:
+    devenv info
+
+# Start devenv managed processes/services
+up start-services:
+    devenv up
+
+# Stop devenv managed processes/services
+down stop-services:
+    devenv down
+
+# List devenv managed processes/services
+ps list-services:
+    devenv processes list
+
+# Tail logs of devenv services (e.g., `just logs`, `just logs postgres`)
+logs *ARGS:
+    devenv logs {{ARGS}}
+
+# Placeholder for language-specific linting (can be overridden/extended)
+lint:
+    @echo "No generic lint task defined. See language-specific tasks or devenv scripts."
+
+# Placeholder for language-specific formatting (can be overridden/extended)
+format:
+    @echo "No generic format task defined. See language-specific tasks or devenv scripts."
+
+# Placeholder for language-specific building (can be overridden/extended)
+build:
+    @echo "No generic build task defined. See language-specific tasks or devenv scripts."
+
+# Placeholder for language-specific testing (can be overridden/extended)
+test:
+    @echo "No generic test task defined. See language-specific tasks or devenv scripts."
