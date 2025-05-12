@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+set -x # Enable command tracing
 
 # --- Configuration & Helper Functions ---
 # (Similar to the previous version of init-project.sh with log_info, log_error, usage)
