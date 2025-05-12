@@ -8,32 +8,36 @@
     
     # devenv for development environments
     devenv-sh = {
-      url = "github:cachix/devenv/v1.0.8"; # Pinned
+      url = "github:cachix/devenv/v1.0.8"; # Pinned tag
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
     # Python-specific inputs
     uv2nix = {
-      url = "github:pyproject-nix/uv2nix"; # Consider pinning
+      url = "github:pyproject-nix/uv2nix";
+      rev = "fe540e91c26f378c62bf6da365a97e848434d0cd"; # Pinned
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
     # Rust-specific inputs
     crane = {
-      url = "github:ipetkov/crane"; # Consider pinning
+      url = "github:ipetkov/crane";
+      rev = "dfd9a8dfd09db9aad544c4d3b6c47b12562544a5"; # Pinned
     };
     fenix = {
-      url = "github:nix-community/fenix"; # Consider pinning
+      url = "github:nix-community/fenix";
+      rev = "9e5d68514e6ad2d4c6236d6ed4488afeeeceade3"; # Pinned
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
     # Linting tools
     deadnix = {
-      url = "github:astro/deadnix"; # Consider pinning
+      url = "github:astro/deadnix";
+      rev = "d75457b95d7cfa82fcd60970939f76fccfce19e5"; # Pinned
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
-
+  
   outputs = { self, nixpkgs, flake-utils, devenv-sh, uv2nix, crane, fenix, deadnix, ... }@inputs:
     flake-utils.lib.eachDefaultSystem (system:
       let
@@ -49,15 +53,10 @@
           {
             projectName = "{{PROJECT_NAME}}";
             projectType = "{{PROJECT_TYPE}}";
-
-            # Python-specific settings (only relevant if projectType is "python")
-            pythonVersion = "{{PYTHON_VERSION}}"; # e.g., "3.11"
+            pythonVersion = "{{PYTHON_VERSION}}"; 
             manageDependenciesWithUv2nix = {{MANAGE_DEPS_WITH_UV2NIX}};
-            uv2nixConfig.pureEval = false; # For uv2nix *tool* execution (allows network)
-
-            # Rust-specific settings (only relevant if projectType is "rust")
-            rustEdition = "{{RUST_EDITION}}"; # e.g., "2021"
-            # rustChannel = "stable"; # Or "nightly", "beta" - can be added
+            uv2nixConfig.pureEval = false; 
+            rustEdition = "{{RUST_EDITION}}"; 
           }
         '';
         generatedProjectConfig = pkgs.writeText "project_config.nix.from_flake" generatedProjectConfigContent;
@@ -76,12 +75,14 @@
           generated_project_config_path = generatedProjectConfig;
 
           inputs_nixpkgs_url = "github:NixOS/nixpkgs/nixos-unstable";
-          inputs_devenv_url = "github:cachix/devenv/v1.0.8";
+          inputs_devenv_url = "github:cachix/devenv/v1.0.8"; 
           inputs_flake_utils_url = "github:numtide/flake-utils";
-          inputs_uv2nix_url = "github:pyproject-nix/uv2nix";
-          inputs_uv2nix_rev = inputs.uv2nix.rev or (inputs.uv2nix.meta.original.rev or "main"); 
-          inputs_crane_url = "github:ipetkov/crane";
-          inputs_fenix_url = "github:nix-community/fenix";
+          
+          inputs_uv2nix_url = self.inputs.uv2nix.url; 
+          inputs_uv2nix_rev = inputs.uv2nix.rev;     
+          
+          inputs_crane_url = self.inputs.crane.url; 
+          inputs_fenix_url = self.inputs.fenix.url;
         };
 
         initProjectAppProgram = pkgs.writeShellScriptBin "init-project-app" ''
