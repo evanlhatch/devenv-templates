@@ -42,27 +42,50 @@
         # Prefer ty from nixpkgs if it exists and is recent enough, otherwise try building.
         tyPackage = pkgs.ty or tyFromSource;
 
+        # Prepare the init-project.sh script with substituted values
+        initScriptSubstituted = pkgs.substituteAll {
+          name = "init-project-script"; # A name for the derivation
+          src = ./init-project.sh; # Source file for substitution
+          isExecutable = true;
+
+          # Tools available to the script (primarily for shebang and if script tried to call them directly without PATH)
+          # The PATH substitution below is more critical for tools used inside the script.
+          inherit (pkgs) bash;
+
+          # Substitute paths to template directories within the Flake
+          # 'self' here refers to the path of the flake's source directory
+          template_base_path = "${self}/template_base";
+          template_python_path = "${self}/template_python";
+          template_rust_path = "${self}/template_rust";
+
+          # Substitute Flake input URLs for the generated project's flake.nix and devenv.yaml
+          inputs_nixpkgs_url = inputs.nixpkgs.url;
+          inputs_devenv_url = inputs.devenv-sh.url;
+          inputs_flake_utils_url = inputs.flake-utils.url;
+          inputs_uv2nix_url = inputs.uv2nix.url;
+          inputs_ty_source_url = inputs.ty-source.url;
+          inputs_crane_url = inputs.crane.url;
+          inputs_fenix_url = inputs.fenix.url;
+
+          # Provide a PATH with necessary tools for the script's execution environment
+          # This ensures tools like cp, mkdir, basename, git, sd, grep, find are found by the script
+          PATH = pkgs.lib.makeBinPath [
+            pkgs.bash
+            pkgs.coreutils
+            pkgs.sd
+            pkgs.git
+            pkgs.gnugrep
+            pkgs.findutils
+          ];
+        };
       in
       {
         # The Flake App for project initialization
         apps.init-project = {
           type = "app";
-          program = "\${self.packages.\${system}.init-script-env}/bin/init-project";
+          program = "${initScriptSubstituted}"; # Path to the executable substituted script
         };
-        apps.default = self.apps.\${system}.init-project; # Alias
-
-        # Environment that provides the init-project script and its dependencies
-        packages.init-script-env = pkgs.buildEnv {
-          name = "init-script-environment";
-          paths = [
-            (pkgs.writeShellScriptBin "init-project" (builtins.readFile ./init-project.sh))
-            pkgs.sd # For search-replace in template files
-            pkgs.git # For initializing git repo in new project
-            pkgs.coreutils # For basic commands like basename, mkdir, cp, cat
-            pkgs.gnugrep # For grep in scripts
-            pkgs.findutils # For find in scripts
-          ];
-        };
+        apps.default = self.apps.${system}.init-project; # Alias
 
         # Development shell for working *on this template repository itself*
         devShells.default = pkgs.devenv.lib.mkShell { # Using devenv for the template repo's dev env
