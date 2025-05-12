@@ -153,7 +153,7 @@
             init-project-package 
             test-templates-script    
             # tyPackage removed. Add pkgs.ty if available and needed for template dev.
-            pkgs.ty # Assuming pkgs.ty exists, otherwise remove or handle conditionally
+            # pkgs.ty # Assuming pkgs.ty exists, otherwise remove or handle conditionally
           ];
           shellHook = ''
             echo "Welcome to the devenv-templates development environment!"
